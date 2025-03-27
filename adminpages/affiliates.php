@@ -452,11 +452,18 @@
 							</td>
 							<td>
 								<?php
-									$norders = $wpdb->get_var("SELECT COUNT(" . esc_sql( pmpro_affiliates_get_commission_calculation_source() ) . ") FROM $wpdb->pmpro_membership_orders WHERE affiliate_id = '" . esc_sql($affiliate->id) . "' AND status NOT IN('pending', 'error', 'refunded', 'refund', 'token', 'review')");
-									if(empty($affiliate->visits))
+									if ( empty( $affiliate->visits ) ) {
 										echo "0%";
-									else
-										echo esc_html( round($norders / $affiliate->visits * 100, 2) . "%" );
+									} else {
+										// count each recurring subscription with the affiliate id as one conversion
+										$subscription_conversions = $wpdb->get_var("SELECT COUNT(*) FROM ( SELECT " . esc_sql( pmpro_affiliates_get_commission_calculation_source() ) . " FROM $wpdb->pmpro_membership_orders WHERE affiliate_id = '" . esc_sql($affiliate->id) . "' AND status NOT IN('pending', 'error', 'refunded', 'refund', 'token', 'review') AND subscription_transaction_id <> '' GROUP BY subscription_transaction_id ) AS subscriptions_query");
+
+										// count each one time order with the affiliate id as a conversion
+										$one_time_conversions = $wpdb->get_var("SELECT COUNT(" . esc_sql( pmpro_affiliates_get_commission_calculation_source() ) . ") FROM $wpdb->pmpro_membership_orders WHERE affiliate_id = '" . esc_sql($affiliate->id) . "' AND status NOT IN('pending', 'error', 'refunded', 'refund', 'token', 'review') AND subscription_transaction_id = ''");
+
+										$total_conversions = $subscription_conversions + $one_time_conversions;
+										echo esc_html( round ( $total_conversions / $affiliate->visits * 100, 2 ) . "%" );
+									}
 								?>
 							</td>
 							<?php
