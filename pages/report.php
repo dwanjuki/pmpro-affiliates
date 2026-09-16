@@ -41,6 +41,19 @@ function pmpro_affiliates_report_shortcode( $atts, $content = null, $code = '' )
 	$pmpro_affiliates          = pmpro_affiliates_getAffiliatesForUser();
 	$pmpro_affiliates_settings = pmpro_affiliates_get_settings();
 
+	$pmpro_affiliates_singular_name = $pmpro_affiliates_settings['pmpro_affiliates_singular_name'];
+
+	// No affiliate codes for this user. The preheader redirects on the assigned
+	// affiliate report page; this covers the shortcode used anywhere else.
+	if ( empty( $pmpro_affiliates ) ) {
+		return '<p>' . sprintf(
+			// translators: %1$s is the singular affiliate label, %2$s is a link to the membership account page.
+			esc_html__( 'You do not have any %1$s codes. %2$s', 'pmpro-affiliates' ),
+			esc_html( $pmpro_affiliates_singular_name ),
+			'<a href="' . esc_url( pmpro_url( 'account' ) ) . '">' . esc_html__( 'View Your Membership Account &rarr;', 'pmpro-affiliates' ) . '</a>'
+		) . '</p>';
+	}
+
 	// Default values from shortcode attribute. Block defaults are set in the block's register_block_type() function.
 	extract(
 		shortcode_atts(
@@ -84,8 +97,7 @@ function pmpro_affiliates_report_shortcode( $atts, $content = null, $code = '' )
 		Page Template HTML/ETC
 	*/
 
-	$pmpro_affiliates_singular_name = $pmpro_affiliates_settings['pmpro_affiliates_singular_name'];
-	$pmpro_affiliates_plural_name   = $pmpro_affiliates_settings['pmpro_affiliates_plural_name'];
+	$pmpro_affiliates_plural_name = $pmpro_affiliates_settings['pmpro_affiliates_plural_name'];
 
 	if ( ! empty( $_REQUEST['report'] ) ) {
 		$report = intval( $_REQUEST['report'] );
