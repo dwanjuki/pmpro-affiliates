@@ -4,21 +4,24 @@
 */
 function pmpro_affiliates_report_preheader() {
 	if ( ! is_admin() ) {
-		global $post, $current_user;
-		if ( ( ! empty( $post->post_content ) && strpos( $post->post_content, '[pmpro_affiliates_report]' ) !== false )
-			|| ( ! empty( $post->post_content_filtered ) && strpos( $post->post_content_filtered, '[pmpro_affiliates_report]' ) !== false ) ) {
-			/*
-				Preheader operations here.
-			*/
-			// get affiliates
-			global $pmpro_affiliates;
-			$pmpro_affiliates = pmpro_affiliates_getAffiliatesForUser();
+		global $pmpro_pages;
 
-			// no affiliates, get out of here
-			if ( empty( $pmpro_affiliates ) ) {
-				wp_redirect( pmpro_url( 'account' ) );
-				exit;
-			}
+		// Return if this is not the assigned affiliate report page.
+		if ( empty( $pmpro_pages['affiliate_report'] ) || ! is_page( $pmpro_pages['affiliate_report'] ) ) {
+			return;
+		}
+
+		/*
+			Preheader operations here.
+		*/
+		// get affiliates
+		global $pmpro_affiliates;
+		$pmpro_affiliates = pmpro_affiliates_getAffiliatesForUser();
+
+		// no affiliates, get out of here
+		if ( empty( $pmpro_affiliates ) ) {
+			wp_redirect( pmpro_url( 'account' ) );
+			exit;
 		}
 	}
 }
@@ -29,6 +32,11 @@ add_action( 'wp', 'pmpro_affiliates_report_preheader', 1 );
 */
 function pmpro_affiliates_report_shortcode( $atts, $content = null, $code = '' ) {
 	global $post, $wpdb, $current_user, $pmpro_pages;
+
+	// Make sure that PMPro is enabled.
+	if ( ! function_exists( 'pmpro_get_element_class' ) ) {
+		return '<p>' . esc_html__( 'Paid Memberships Pro must be enabled to use the Affiliates Add On.', 'pmpro-affiliates' ) . '</p>';
+	}
 
 	$pmpro_affiliates          = pmpro_affiliates_getAffiliatesForUser();
 	$pmpro_affiliates_settings = pmpro_affiliates_get_settings();
@@ -72,7 +80,6 @@ function pmpro_affiliates_report_shortcode( $atts, $content = null, $code = '' )
 	$show_commissions_table = filter_var( $show_commissions_table, FILTER_VALIDATE_BOOLEAN );
 
 
-	ob_start();
 	/*
 		Page Template HTML/ETC
 	*/
@@ -96,16 +103,16 @@ function pmpro_affiliates_report_shortcode( $atts, $content = null, $code = '' )
 
 		// no affiliate found?
 		if ( empty( $affiliate ) ) {
-			wp_redirect( pmpro_url( 'account' ) );
-			exit;
+			return '<p>' . esc_html__( 'You do not have permission to view this report.', 'pmpro-affiliates' ) . '</p>';
 		}
 
 		// make sure admin or affiliate user
 		if ( ! current_user_can( 'manage_options' ) && $current_user->user_login != $affiliate->affiliateuser ) {
-			wp_redirect( pmpro_url( 'account' ) );
-			exit;
+			return '<p>' . esc_html__( 'You do not have permission to view this report.', 'pmpro-affiliates' ) . '</p>';
 		}
 	}
+
+	ob_start();
 	?>
 	<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro' ) ); ?>">
 		<?php
